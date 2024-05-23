@@ -40,7 +40,7 @@ force_sender=ynovmailoff@gmail.com
 
 ----------------------------------------------------------------------
 
-## OPTIONEL : 
+## Focntion ++ : 
 
 
 Vérification de compte par mail lors de l'inscription 
