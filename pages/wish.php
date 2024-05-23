@@ -1,15 +1,15 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['panier'])) {
-    $_SESSION['panier'] = [];
-}
-
 if (isset($_SESSION['user_id'])) {
     $user_id = $_SESSION['user_id'];
-    $wish_url = "./wish.php";
+    $panier_url = "./panier.php";
 } else {
-    $wish_url = "./wish.php";
+    $panier_url = "./panier.php";
+}
+
+if (!isset($_SESSION['panier'])) {
+    $_SESSION['panier'] = [];
 }
 
 $total_price = 0;
@@ -54,7 +54,7 @@ if (isset($_SESSION['user_id'])) {
             href="https://fonts.googleapis.com/css2?family=Bungee+Shade&family=Permanent+Marker&family=Whisper&display=swap"
             rel="stylesheet">
         <script src="https://www.paypal.com/sdk/js?client-id=YOUR_CLIENT_ID&currency=USD"></script>
-        <title>Mon panier</title>
+        <title>Ma wishlist</title>
 
     </head>
 
@@ -86,9 +86,9 @@ if (isset($_SESSION['user_id'])) {
                     </ul>
                     <?php
                     if (isset($_SESSION['user_id'])) {
-                        echo '<a href="' . $wish_url . '" class="btn btn-info ml-2">Wishlist <span class="badge badge-light"></span></a>';
+                        echo '<a href="' . $panier_url . '" class="btn btn-primary ml-2">Mon Panier <span class="badge badge-light"></span></a>';
                     } else {
-                        echo '<a href="' . $wish_url . '" class="btn btn-info ml-2">Wishlist</a>';
+                        echo '<a href="' . $panier_url . '" class="btn btn-primary ml-2">Mon Panier</a>';
                     }
                     ?>
                 </div>
@@ -106,50 +106,30 @@ if (isset($_SESSION['user_id'])) {
                 if (isset($_POST['delete_product'])) {
                     $product_id = $_POST['product_id'];
 
-                    $sql_delete = "DELETE FROM panier_utilisateur WHERE id_produit = ? AND id_utilisateur = ?";
+                    $sql_delete = "DELETE FROM wish_utilisateur WHERE id_produit = ? AND id_utilisateur = ?";
                     $stmt_delete = $conn->prepare($sql_delete);
                     $stmt_delete->bind_param("ii", $product_id, $user_id);
                     $stmt_delete->execute();
 
-                    header("Location: panier.php");
+                    header("Location: wish.php");
                     exit;
                 }
             }
 
-            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['appliquer_code_promo'])) {
-                $code_promo = $_POST['code_promo'];
-
-                $sql = "SELECT valeur FROM codes_promo WHERE code = ?";
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("s", $code_promo);
-                $stmt->execute();
-                $result = $stmt->get_result();
-
-                if ($result->num_rows > 0) {
-                    $row = $result->fetch_assoc();
-                    $reduction = $row['valeur'];
-
-                    $_SESSION['reduction'] = $reduction;
-                } else {
-                    echo "Code promo invalide.";
-                }
-            }
-
-            $sql = "SELECT * FROM panier_utilisateur WHERE id_utilisateur = ?";
+            $sql = "SELECT * FROM wish_utilisateur WHERE id_utilisateur = ?";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("i", $user_id);
             $stmt->execute();
             $result = $stmt->get_result();
 
             if ($result->num_rows > 0) {
-                echo '<h2>Mon Panier</h2>';
+                echo '<h2>Ma wishlist</h2>';
                 echo '<table class="product-table">';
                 echo '<tr>';
                 echo '<th>Image</th>';
                 echo '<th>Nom</th>';
                 echo '<th>Description</th>';
                 echo '<th>Prix</th>';
-                echo '<th>Quantité</th>';
                 echo '<th>Action</th>';
                 echo '</tr>';
 
@@ -159,11 +139,10 @@ if (isset($_SESSION['user_id'])) {
                     echo '<td>' . $row['nom_produit'] . '</td>';
                     echo '<td>' . $row['description_produit'] . '</td>';
                     echo '<td>' . $row['prix_produit'] . '</td>';
-                    echo '<td>' . $row['quantite'] . '</td>';
                     echo '<td>';
-                    echo '<form method="post" action="panier.php">';
+                    echo '<form method="post" action="wish.php">';
                     echo '<input type="hidden" name="product_id" value="' . $row['id_produit'] . '">';
-                    echo '<input type="submit" class="btn btn-danger" name="delete_product" value="Supprimer">';
+                    echo '<input type="submit" name="delete_product" class="btn btn-danger" value="Supprimer">';
                     echo '</form>';
                     echo '</td>';
                     echo '</tr>';
@@ -173,9 +152,8 @@ if (isset($_SESSION['user_id'])) {
 
                 echo '</table>';
 
-                echo '<div class="total-price">Total: $' . $total_price . '</div>';
             } else {
-                echo 'Le panier est vide.';
+                echo 'La wishlist est vide.';
             }
 
             $conn->close();
@@ -183,36 +161,9 @@ if (isset($_SESSION['user_id'])) {
     echo 'Utilisateur non connecté.';
 }
 
-$total = $total_price;
-
-if (isset($_SESSION['reduction'])) {
-    $reduction = $_SESSION['reduction'];
-    $total -= ($total_price * $reduction);
-    echo '<p class="total">Total (avec réduction) : $' . number_format($total, 2) . '</p>';
-} else {
-    echo '<p class="total">Total : $' . number_format($total, 2) . '</p>';
-}
-
 ?>
     </div>
-    <div class="container text-center mb-4">
-        <form method="post" action="panier.php" class="row justify-content-center">
-            <div class="col-md-3">
-                <input type="text" name="code_promo" class="form-control" placeholder="Entrez votre code promo">
-            </div>
-            <input type="submit" name="appliquer_code_promo" class="btn btn-info" value="Appliquer">
-        </form>
-    </div>
 
-
-    <div class="container">
-        <form method="post" action="process_payment.php">
-            <input type="hidden" name="total_price" value="<?php echo $total; ?>">
-            <input type="submit" name="submit_payment" value="Payer" class="d-block mx-auto btn btn-success">
-        </form>
-    </div>
-
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 
 </html>

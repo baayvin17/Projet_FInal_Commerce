@@ -7,13 +7,14 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-$id_utilisateur = $_SESSION['user_id'];
+$id_commande = $_GET['id'];
 
 $conn = new PDO("mysql:host=localhost;dbname=dbphp", "root", "");
-$stmt = $conn->prepare("SELECT * FROM commandes WHERE id_utilisateur = :id_utilisateur");
-$stmt->bindParam(':id_utilisateur', $id_utilisateur);
+$stmt = $conn->prepare("SELECT * FROM commandes WHERE id_commande = :id_commande");
+$stmt->bindParam(':id_commande', $id_commande);
 $stmt->execute();
-$orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$order = $stmt->fetch(PDO::FETCH_ASSOC);
+
 
 ?>
 
@@ -23,7 +24,7 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historique des commandes</title>
+    <title>Détails de la commande</title>
     <link rel="stylesheet" href="../css/loading.css">
     <link rel="stylesheet" href="../css/orders.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
@@ -67,23 +68,11 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </nav>
 
     <div class="container mt-5">
-        <h1 class="mb-5 text-center">Historique des commandes</h1>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col">Date de commande</th>
-                    <th scope="col">Détails</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($orders as $order) : ?>
-                    <tr>
-                        <td><?php echo $order['date_commande']; ?></td>
-                        <td><a href="order_details.php?id=<?php echo $order['id_commande']; ?>">Détails</a></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+        <h1>Détails de la commande</h1>
+
+        <h2>ID Commande: <?php echo $order['id_commande']; ?></h2>
+        <p>Date de commande: <?php echo $order['date_commande']; ?></p>
+        <p>Total: <?php echo $order['prix']; ?></p>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>

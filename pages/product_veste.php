@@ -37,7 +37,7 @@ if (isset($_SESSION['user_id'])) {
 
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
-            <a class="navbar-brand" href="./catalogue.php">PHP</a>
+            <a class="navbar-brand" href="./catalogue.php">HB Commerce</a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
