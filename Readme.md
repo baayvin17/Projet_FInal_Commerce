@@ -2,8 +2,8 @@
 
 ## Configuration
 
-Le dossier du projet devrai être placé dans C:\xampp\htdocs\xampp
-Le dossier du projet devrai s'appeler "vrai php" pour que tout fonctionne bien, si des liens seront corrompus
+Le dossier du projet devrai être placé dans C:\xampp\htdocs\xampp   ( IMPORTANT !!!!!!!!!!!)
+Le dossier du projet devrai s'appeler "vrai php" pour que tout fonctionne bien, si des liens seront corrompus  ( IMPORTANT !!!!!!!!!!!)
 
 ## Paiement
 
