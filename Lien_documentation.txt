@@ -8,3 +8,4 @@ Documentation Technique Complète du Projet Dev & Infra: https://docs.google.com
 UML: UML_Projet_Final_Commerce.drawio - draw.io (diagrams.net)
 
 Trello : https://trello.com/invite/b/gxvEpnmb/ATTI07b55c5f8cc086bbfa3634eab74433015E9F9F2F/projetfinalcommerce
+    

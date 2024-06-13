@@ -1,10 +1,9 @@
 <?php
 session_start();
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $product_id = $_POST['product_id'];
-    $commentaire = $_POST['commentaire'];
-    $note = $_POST['note'];
+if (isset($_SESSION['user_id']) && isset($_GET['id'])) {
+    $user_id = $_SESSION['user_id'];
+    $produit_id = $_GET['id'];
 
     $servername = "localhost";
     $username = "root";
@@ -17,86 +16,46 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         die("La connexion à la base de données a échoué : " . $conn->connect_error);
     }
 
-    $nom_utilisateur = "Utilisateur Anonyme";
+    $table_name = 'pantalon';
 
-    if (isset($_SESSION['user_id'])) {
-        $id_utilisateur = $_SESSION['user_id'];
+    $sql = "SELECT * FROM $table_name WHERE id_pantalon = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $produit_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $produit = $result->fetch_assoc();
 
-        $get_user_stmt = $conn->prepare("SELECT nom_utilisateur FROM utilisateurs WHERE id_utilisateur = ?");
-        $get_user_stmt->bind_param("i", $id_utilisateur);
-        $get_user_stmt->execute();
-        $user_result = $get_user_stmt->get_result();
+    if ($produit) {
+        $sqlCheck = "SELECT * FROM panier_utilisateur WHERE id_utilisateur = ? AND id_produit = ?";
+        $stmtCheck = $conn->prepare($sqlCheck);
+        $stmtCheck->bind_param("ii", $user_id, $produit_id);
+        $stmtCheck->execute();
+        $resultCheck = $stmtCheck->get_result();
+        $existingProduit = $resultCheck->fetch_assoc();
 
-        if ($user_row = $user_result->fetch_assoc()) {
-            $nom_utilisateur = $user_row['nom_utilisateur'];
-        }
-    }
-
-    $existing_review_stmt = $conn->prepare("SELECT id_avis FROM avis_pantalon WHERE id_utilisateur = ? AND id_produit = ?");
-    $existing_review_stmt->bind_param("ii", $id_utilisateur, $product_id);
-    $existing_review_stmt->execute();
-    $existing_review_result = $existing_review_stmt->get_result();
-
-    if ($existing_review_result->num_rows > 0) {
-        $update_review_stmt = $conn->prepare("UPDATE avis_pantalon SET commentaire = ?, note = ? WHERE id_utilisateur = ? AND id_produit = ?");
-        $update_review_stmt->bind_param("sdsi", $commentaire, $note, $id_utilisateur, $product_id);
-
-        if ($update_review_stmt->execute()) {
-            echo "Avis mis à jour avec succès!";
+        if ($existingProduit) {
+            $newQuantite = $existingProduit['quantite'] + 1;
+            $newPrix = $existingProduit['prix_produit'] + $produit['prix'];
+            $sqlUpdate = "UPDATE panier_utilisateur SET quantite = ?, prix_produit = ? WHERE id_utilisateur = ? AND id_produit = ?";
+            $stmtUpdate = $conn->prepare($sqlUpdate);
+            $stmtUpdate->bind_param("idii", $newQuantite, $newPrix, $user_id, $produit_id);
+            $stmtUpdate->execute();
+            header("Location: ./panier.php");
         } else {
-            echo "Erreur lors de la mise à jour de l'avis : " . $update_review_stmt->error;
+            $sqlInsert = "INSERT INTO panier_utilisateur (id_utilisateur, id_produit, quantite, image_url, nom_produit, description_produit, prix_produit)
+                          VALUES (?, ?, 1, ?, ?, ?, ?)";
+            $stmtInsert = $conn->prepare($sqlInsert);
+            $stmtInsert->bind_param("iisssd", $user_id, $produit_id, $produit['image_url'], $produit['nom'], $produit['description'], $produit['prix']);
+            $stmtInsert->execute();
+            header("Location: ./panier.php");
+            exit();  
         }
     } else {
-        $date_avis = date('Y-m-d H:i:s');
-
-        $insert_stmt = $conn->prepare("INSERT INTO avis_pantalon (id_utilisateur, id_produit, commentaire, note, nom_utilisateur, date_avis) VALUES (?, ?, ?, ?, ?, ?)");
-        $insert_stmt->bind_param("iisdss", $id_utilisateur, $product_id, $commentaire, $note, $nom_utilisateur, $date_avis);
-
-        if ($insert_stmt->execute()) {
-            $update_average_rating_stmt = $conn->prepare("UPDATE pantalon SET note_moyenne = (SELECT AVG(note) FROM avis_pantalon WHERE id_produit = ?) WHERE id_pantalon = ?");
-            $update_average_rating_stmt->bind_param("ii", $product_id, $product_id);
-
-            if ($update_average_rating_stmt->execute()) {
-                echo "Avis ajouté avec succès!";
-            } else {
-                echo "Erreur lors de la mise à jour de la note moyenne : " . $update_average_rating_stmt->error;
-            }
-        } else {
-            echo "Erreur lors de l'ajout de l'avis : " . $insert_stmt->error;
-        }
+        echo 'Le produit n\'existe pas.';
     }
 
     $conn->close();
 } else {
-    header("Location: login.php");
-    exit();
+    echo 'Erreur : Utilisateur non connecté ou ID du produit manquant.';
 }
-?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirection en cours...</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-</head>
-<body>
-
-<div class="container d-flex justify-content-center align-items-center vh-100">
-    <div class="text-center">
-        <div class="spinner-border" role="status">
-            <span class="sr-only">Loading...</span>
-        </div>
-    </div>
-</div>
-
-<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-<script>
-    setTimeout(function () {
-        window.location.href = 'catalogue.php';
-    }, 1000);
-</script>
-
-</body>
-</html>
